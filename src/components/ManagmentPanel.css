@@ -1,0 +1,35 @@
+.panel {
+  height: 4vh;
+  display: flex;
+  justify-content: space-between;
+  flex-direction: row;
+  align-items: center;
+  background-color: rgb(243, 243, 243);
+  margin: 0 0.5rem;
+}
+
+.buttons-wrapper button {
+  margin: 0 0.5rem;
+}
+
+.overlay {
+  position: fixed; /* Sit on top of the page content */
+  width: 100vw;
+  height: 100vh;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5); /* Black background with opacity */
+  z-index: 999; /* Specify a stack order in case you're using a different order for other elements */
+  cursor: pointer; /* Add a pointer on hover */
+}
+
+.overlay form {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  font-size: 50px;
+  color: white;
+  transform: translate(-50%, -50%);
+}
