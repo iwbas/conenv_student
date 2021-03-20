@@ -10,6 +10,7 @@ function execute(command, callback) {
 }
 
 let win;
+let closingByPass = false;
 
 function createWindow() {
   win = new BrowserWindow({
@@ -42,7 +43,13 @@ function createWindow() {
   });
 
   win.on("close", (event) => {
-    event.preventDefault(); // stop the browser window from being closed
+    if (closingByPass) {
+      execute("explorer.exe", (output) => {
+        console.log(output);
+      });
+    } else {
+      event.preventDefault(); // stop the browser window from being closed
+    }
   });
 }
 
@@ -81,8 +88,6 @@ app.on("browser-window-blur", (event, bw) => {
 });
 
 ipcMain.on("close-by-pass", (evt, arg) => {
-  execute("explorer.exe", (output) => {
-    console.log(output);
-  });
+  closingByPass = true;
   app.quit();
 });
