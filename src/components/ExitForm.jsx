@@ -1,3 +1,5 @@
+import './ExitForm.css';
+
 import React from "react";
 const { ipcRenderer } = window.require("electron");
 

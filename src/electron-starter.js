@@ -1,6 +1,7 @@
-const { app, BrowserWindow, ipcMain } = require("electron");
+const { app, BrowserWindow, ipcMain, globalShortcut } = require("electron");
 const url = require("url");
 const path = require("path");
+const execSync = require("child_process").execSync;
 const exec = require("child_process").exec;
 
 function execute(command, callback) {
@@ -9,9 +10,26 @@ function execute(command, callback) {
   });
 }
 
-let win;
+let win = null;
 let closingByPass = false;
 
+/* --- Защита от нескольких инстансов --- */
+const gotTheLock = app.requestSingleInstanceLock();
+
+if (!gotTheLock) {
+  console.log("single instance lock");
+  app.quit();
+  return;
+}
+
+app.on("second-instance", (event, commandLine, workingDirectory) => {
+  if (win) {
+    if (win.isMinimized()) win.restore();
+    win.focus();
+  }
+});
+
+/* --- Создание окна --- */
 function createWindow() {
   win = new BrowserWindow({
     alwaysOnTop: true, // enable always on top to prevent other windows from appearing above it
@@ -35,7 +53,6 @@ function createWindow() {
 
   // win.removeMenu();
 
-  // win.loadFile('index.html')
   win.loadURL(startUrl);
 
   win.on("closed", () => {
@@ -43,32 +60,46 @@ function createWindow() {
   });
 
   win.on("close", (event) => {
-    if (closingByPass) {
-      execute("explorer.exe", (output) => {
-        console.log(output);
-      });
-    } else {
+    console.log(closingByPass);
+    if (!closingByPass) {
       event.preventDefault(); // stop the browser window from being closed
+    } else {
+      if (process.platform === "win32") {
+        exec("explorer.exe", (error, stdout, stderr) => {
+          console.log(stdout);
+        });
+      }
     }
   });
+
+  console.log('alttabreg');
 }
 
+/* --- Запуск приложения --- */
 app.on("ready", (event) => {
   console.log("ready");
 
-  // call the function
-  // execute("taskkill /f /im explorer.exe", (output) => {
-  //   console.log(output);
-  // });
+  if (process.platform === "win32") {
+    execSync("taskkill /f /im explorer.exe", (error, stdout, stderr) => {
+      console.log(stdout);
+    });
+  }
 
   createWindow();
+
+  console.log('reg');
+  
+  registered = false;
+
+  while (!registered) {
+    registered = globalShortcut.register("Alt+Tab", () => {
+      console.log("Alt+Tab");
+    });
+    console.log('регистрация');
+  }
 });
 
-app.on("before-quit", (event) => {
-  console.log("before-quit");
-  // event.preventDefault(); // prevent the process from ending
-});
-
+/* MacOs - пока оставил */
 app.on("window-all-closed", () => {
   if (process.platform !== "darwin") {
     app.quit();
@@ -81,12 +112,13 @@ app.on("activate", () => {
   }
 });
 
-// helper to prevent the app from loosing focus
+/* --- [D] Возврат фокуса --- */
 app.on("browser-window-blur", (event, bw) => {
   bw.restore();
   bw.focus();
 });
 
+/* --- [D] Выход по паролю --- */
 ipcMain.on("close-by-pass", (evt, arg) => {
   closingByPass = true;
   app.quit();
